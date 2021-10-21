@@ -1,0 +1,92 @@
+import cv2
+import numpy as np
+
+from utils import get_rot_matrix
+from plane import objects
+
+
+C = np.array([
+    [800, 0, 400, 0],
+    [0, 800, 400, 0],
+    [0, 0, 1, 0]
+])
+
+win = "Plane"
+cv2.namedWindow("Plane")
+
+
+def do_nothing(value):
+    pass
+
+
+cv2.createTrackbar("roll", win, 30, 180, do_nothing)
+cv2.createTrackbar("pitch", win, 30, 180, do_nothing)
+cv2.createTrackbar("yaw", win, 30, 180, do_nothing)
+
+cv2.createTrackbar("camera roll", win, 0, 180, do_nothing)
+cv2.createTrackbar("camera pitch", win, 0, 180, do_nothing)
+cv2.createTrackbar("camera yaw", win, 0, 180, do_nothing)
+cv2.createTrackbar("distance", win, 400, 2000, do_nothing)
+
+
+cv2.setTrackbarMin("roll", win, -180)
+cv2.setTrackbarMin("pitch", win, -180)
+cv2.setTrackbarMin("yaw", win, -180)
+cv2.setTrackbarMin("camera roll", win, -180)
+cv2.setTrackbarMin("camera pitch", win, -180)
+cv2.setTrackbarMin("camera yaw", win, -180)
+cv2.setTrackbarMin("distance", win, -2000)
+
+while True:
+    alpha = np.radians(90)
+    beta = np.radians(90)
+    gamma = np.radians(0)
+    R = get_rot_matrix(alpha, beta, gamma)
+    cam_vert_rot = np.radians(0)
+    cam_horiz_rot = np.radians(0)
+    camera_roll = np.radians(cv2.getTrackbarPos("camera roll", "Plane"))
+    camera_pitch = np.radians(cv2.getTrackbarPos("camera pitch", "Plane"))
+    camera_yaw = np.radians(cv2.getTrackbarPos("camera yaw", "Plane"))
+    Rwc = get_rot_matrix(camera_roll, camera_pitch,
+                         camera_yaw)  # Camera to world
+    distz = cv2.getTrackbarPos("distance", "Plane")
+    Twc = np.vstack(
+        [
+            np.hstack([Rwc, np.array([[0], [0], [0]])]),
+            [0, 0, 0, 1]
+        ]
+    )
+
+    T = np.vstack(
+        [
+            np.hstack([R, np.array([[0], [0], [distz]])]),
+            [0, 0, 0, 1]
+        ]
+    )
+
+    roll = np.radians(cv2.getTrackbarPos("roll", "Plane"))
+    pitch = np.radians(cv2.getTrackbarPos("pitch", "Plane"))
+    yaw = np.radians(cv2.getTrackbarPos("yaw", "Plane"))
+    R = get_rot_matrix(roll, pitch, yaw)
+
+    T2 = np.vstack(
+        [
+            np.hstack([R, np.array([[0], [0], [0]])]),
+            [0, 0, 0, 1]
+        ]
+    )
+    img = np.zeros((800, 800), dtype=np.uint8)
+    for points in objects:
+        points = np.array(points)
+
+        points = C @ np.linalg.inv(Twc) @ T @ T2 @ points[:, :, None]
+        points = points.squeeze()
+        points = points / (points[:, -1, None])
+
+        for i in range(len(points)):
+            img = cv2.line(img, points[i-1, :-1].astype('int'),
+                           points[i, :-1].astype('int'), (255, 255, 0), 2)
+
+    cv2.imshow(win, img)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
