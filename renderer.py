@@ -88,5 +88,8 @@ while True:
                            points[i, :-1].astype('int'), (255, 255, 0), 2)
 
     cv2.imshow(win, img)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    key = cv2.waitKey(1) & 0xFF
+    if key == ord('q'):
         break
+    if key == ord('c'):
+        cv2.imwrite("./screenshot.png", img)
