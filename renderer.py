@@ -5,7 +5,7 @@ from utils import get_rot_matrix
 from plane import objects
 
 
-C = np.array([
+camera_matrix = np.array([
     [800, 0, 400, 0],
     [0, 800, 400, 0],
     [0, 0, 1, 0]
@@ -69,17 +69,18 @@ while True:
     yaw = np.radians(cv2.getTrackbarPos("yaw", "Plane"))
     R = get_rot_matrix(roll, pitch, yaw)
 
-    T2 = np.vstack(
+    # Transformation matrix to rotate and and translate the model w.r.t it's centre point
+    T_model = np.vstack(
         [
             np.hstack([R, np.array([[0], [0], [0]])]),
             [0, 0, 0, 1]
         ]
-    )
+    ) 
     img = np.zeros((800, 800), dtype=np.uint8)
     for points in objects:
         points = np.array(points)
 
-        points = C @ np.linalg.inv(Twc) @ T @ T2 @ points[:, :, None]
+        points = camera_matrix @ np.linalg.inv(Twc) @ T @ T_model @ points[:, :, None]
         points = points.squeeze()
         points = points / (points[:, -1, None])
 
