@@ -2,6 +2,9 @@ import cv2
 import numpy as np
 
 from utils import get_rot_matrix
+from obj_parser import parse_obj
+
+# objects = parse_obj("./monkey.obj")
 from plane import objects
 
 
@@ -11,8 +14,8 @@ camera_matrix = np.array([
     [0, 0, 1, 0]
 ])
 
-win = "Plane"
-cv2.namedWindow("Plane")
+win = "Object"
+cv2.namedWindow("Object")
 
 
 def do_nothing(value):
@@ -41,15 +44,15 @@ while True:
     alpha = np.radians(90)
     beta = np.radians(90)
     gamma = np.radians(0)
-    R = get_rot_matrix(alpha, beta, gamma)
+    R_model_to_camera = get_rot_matrix(alpha, beta, gamma)
     cam_vert_rot = np.radians(0)
     cam_horiz_rot = np.radians(0)
-    camera_roll = np.radians(cv2.getTrackbarPos("camera roll", "Plane"))
-    camera_pitch = np.radians(cv2.getTrackbarPos("camera pitch", "Plane"))
-    camera_yaw = np.radians(cv2.getTrackbarPos("camera yaw", "Plane"))
+    camera_roll = np.radians(cv2.getTrackbarPos("camera roll", "Object"))
+    camera_pitch = np.radians(cv2.getTrackbarPos("camera pitch", "Object"))
+    camera_yaw = np.radians(cv2.getTrackbarPos("camera yaw", "Object"))
     Rwc = get_rot_matrix(camera_roll, camera_pitch,
                          camera_yaw)  # Camera to world
-    distz = cv2.getTrackbarPos("distance", "Plane")
+    distz = cv2.getTrackbarPos("distance", "Object")
     Twc = np.vstack(
         [
             np.hstack([Rwc, np.array([[0], [0], [0]])]),
@@ -57,22 +60,22 @@ while True:
         ]
     )
 
-    T = np.vstack(
+    T_model_to_camera = np.vstack(
         [
-            np.hstack([R, np.array([[0], [0], [distz]])]),
+            np.hstack([R_model_to_camera, np.array([[0], [0], [distz]])]),
             [0, 0, 0, 1]
         ]
     )
 
-    roll = np.radians(cv2.getTrackbarPos("roll", "Plane"))
-    pitch = np.radians(cv2.getTrackbarPos("pitch", "Plane"))
-    yaw = np.radians(cv2.getTrackbarPos("yaw", "Plane"))
-    R = get_rot_matrix(roll, pitch, yaw)
+    roll = np.radians(cv2.getTrackbarPos("roll", "Object"))
+    pitch = np.radians(cv2.getTrackbarPos("pitch", "Object"))
+    yaw = np.radians(cv2.getTrackbarPos("yaw", "Object"))
+    R_model = get_rot_matrix(roll, pitch, yaw)
 
     # Transformation matrix to rotate and and translate the model w.r.t it's centre point
     T_model = np.vstack(
         [
-            np.hstack([R, np.array([[0], [0], [0]])]),
+            np.hstack([R_model, np.array([[0], [0], [0]])]),
             [0, 0, 0, 1]
         ]
     ) 
@@ -80,7 +83,7 @@ while True:
     for points in objects:
         points = np.array(points)
 
-        points = camera_matrix @ np.linalg.inv(Twc) @ T @ T_model @ points[:, :, None]
+        points = camera_matrix @ np.linalg.inv(Twc) @ T_model_to_camera @ T_model @ points[:, :, None]
         points = points.squeeze()
         points = points / (points[:, -1, None])
 
