@@ -4,7 +4,8 @@ import numpy as np
 from utils import get_rot_matrix
 from obj_parser import parse_obj
 
-objects = parse_obj("./monkey.obj")
+# objects = parse_obj("./monkey.obj")
+from plane import objects
 
 
 camera_matrix = np.array([
