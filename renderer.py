@@ -4,8 +4,8 @@ import numpy as np
 from utils import get_rot_matrix
 from obj_parser import parse_obj
 
-# objects = parse_obj("./monkey.obj")
-from plane import objects
+objects = parse_obj("./plane.obj")
+# from plane import objects
 
 
 camera_matrix = np.array([
@@ -29,7 +29,7 @@ cv2.createTrackbar("yaw", win, 30, 180, do_nothing)
 cv2.createTrackbar("camera roll", win, 0, 180, do_nothing)
 cv2.createTrackbar("camera pitch", win, 0, 180, do_nothing)
 cv2.createTrackbar("camera yaw", win, 0, 180, do_nothing)
-cv2.createTrackbar("distance", win, 400, 2000, do_nothing)
+cv2.createTrackbar("distance", win, 20, 2000, do_nothing)
 
 
 cv2.setTrackbarMin("roll", win, -180)
