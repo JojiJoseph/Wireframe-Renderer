@@ -10,4 +10,4 @@ esc/q - quit
 
 c - save the output as `screenshot.png`
 
-o - toggle orthographic projection
+p - toggle projection between orthographic and perspective

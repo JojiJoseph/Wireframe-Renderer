@@ -8,7 +8,7 @@ args = arg_parser.parse_args()
 
 input_filename = args.input
 
-from utils import get_rot_matrix
+from utils import get_rotation_matrix
 from obj_parser import parse_obj
 
 objects = parse_obj(input_filename)
@@ -52,13 +52,13 @@ while True:
     alpha = np.radians(90)
     beta = np.radians(90)
     gamma = np.radians(0)
-    R_model_to_camera = get_rot_matrix(alpha, beta, gamma)
+    R_model_to_camera = get_rotation_matrix(alpha, beta, gamma)
     cam_vert_rot = np.radians(0)
     cam_horiz_rot = np.radians(0)
     camera_roll = np.radians(cv2.getTrackbarPos("camera roll", "Object"))
     camera_pitch = np.radians(cv2.getTrackbarPos("camera pitch", "Object"))
     camera_yaw = np.radians(cv2.getTrackbarPos("camera yaw", "Object"))
-    Rwc = get_rot_matrix(camera_roll, camera_pitch,
+    Rwc = get_rotation_matrix(camera_roll, camera_pitch,
                          camera_yaw)  # Camera to world
     distz = cv2.getTrackbarPos("distance", "Object")
     Twc = np.vstack(
@@ -78,7 +78,7 @@ while True:
     roll = np.radians(cv2.getTrackbarPos("roll", "Object"))
     pitch = np.radians(cv2.getTrackbarPos("pitch", "Object"))
     yaw = np.radians(cv2.getTrackbarPos("yaw", "Object"))
-    R_model = get_rot_matrix(roll, pitch, yaw)
+    R_model = get_rotation_matrix(roll, pitch, yaw)
 
     # Transformation matrix to rotate and and translate the model w.r.t it's centre point
     T_model = np.vstack(
@@ -113,7 +113,7 @@ while True:
     key = cv2.waitKey(1) & 0xFF
     if key in [27, ord('q')]:
         break
-    if key == ord('o'):
+    if key == ord('p'):
         orthographic_projection = not orthographic_projection
     if key == ord('c'):
         cv2.imwrite("./screenshot.png", img)
