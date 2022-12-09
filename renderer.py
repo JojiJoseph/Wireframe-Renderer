@@ -1,12 +1,17 @@
 import cv2
 import numpy as np
+import argparse
+
+arg_parser = argparse.ArgumentParser()
+arg_parser.add_argument("-i", "--input", type=str, default="./plane.obj")
+args = arg_parser.parse_args()
+
+input_filename = args.input
 
 from utils import get_rot_matrix
 from obj_parser import parse_obj
 
-objects = parse_obj("./plane.obj")
-# from plane import objects
-
+objects = parse_obj(input_filename)
 
 camera_matrix = np.array([
     [800, 0, 400, 0],
@@ -15,7 +20,9 @@ camera_matrix = np.array([
 ])
 
 win = "Object"
-cv2.namedWindow("Object")
+cv2.namedWindow("Object", cv2.WINDOW_NORMAL)
+
+orthographic_projection = False
 
 
 def do_nothing(value):
@@ -83,7 +90,12 @@ while True:
     for points in objects:
         points = np.array(points)
 
-        points = camera_matrix @ np.linalg.inv(Twc) @ T_model_to_camera @ T_model @ points[:, :, None]
+        points_wrt_camera = np.linalg.inv(Twc) @ T_model_to_camera @ T_model @ points[:, :, None]
+        
+        if orthographic_projection:
+            points_wrt_camera[:, 2] = distz
+        
+        points = camera_matrix @ points_wrt_camera
         points = points.squeeze()
         points = points / (points[:, -1, None])
 
@@ -93,7 +105,9 @@ while True:
 
     cv2.imshow(win, img)
     key = cv2.waitKey(1) & 0xFF
-    if key == ord('q'):
+    if key in [27, ord('q')]:
         break
+    if key == ord('o'):
+        orthographic_projection = not orthographic_projection
     if key == ord('c'):
         cv2.imwrite("./screenshot.png", img)
