@@ -12,6 +12,7 @@ from utils import get_rot_matrix
 from obj_parser import parse_obj
 
 objects = parse_obj(input_filename)
+# from plane import objects # To future me: Keep it here for debugging purposes
 
 camera_matrix = np.array([
     [800, 0, 400, 0],
@@ -102,11 +103,12 @@ while True:
         for i in range(len(points)):
             img = cv2.line(img, points[i-1, :-1].astype('int'),
                            points[i, :-1].astype('int'), (255, 255, 0), 2)
-    # Show some hints
+    # Show some status
     if orthographic_projection:
         cv2.putText(img, 'Orthographic', (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, thickness=2)
     else:
         cv2.putText(img, 'Perspective', (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, thickness=2)
+    
     cv2.imshow(win, img)
     key = cv2.waitKey(1) & 0xFF
     if key in [27, ord('q')]:
