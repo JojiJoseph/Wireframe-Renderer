@@ -24,6 +24,8 @@ win = "Object"
 cv2.namedWindow("Object", cv2.WINDOW_NORMAL)
 
 orthographic_projection = False
+anaglyph = False
+anaglyph_dist_between_eyes_scale = 5 # It makes 1 unit in world coordinates 20 cm
 
 
 def do_nothing(value):
@@ -87,27 +89,48 @@ while True:
             [0, 0, 0, 1]
         ]
     ) 
-    img = np.zeros((800, 800), dtype=np.uint8)
+    img = np.zeros((800, 800, 3), dtype=np.uint8)
     for points in objects:
         points = np.array(points)
 
-        points_wrt_camera = np.linalg.inv(Twc) @ T_model_to_camera @ T_model @ points[:, :, None]
+        if not anaglyph:
+            points_wrt_camera = np.linalg.inv(Twc) @ T_model_to_camera @ T_model @ points[:, :, None]
         
-        if orthographic_projection:
-            points_wrt_camera[:, 2] = distz
-        
-        points = camera_matrix @ points_wrt_camera
-        points = points.squeeze()
-        points = points / (points[:, -1, None])
+            if orthographic_projection:
+                points_wrt_camera[:, 2] = distz
+            
+            points = camera_matrix @ points_wrt_camera
+            points = points.squeeze()
+            points = points / (points[:, -1, None])
 
-        for i in range(len(points)):
-            img = cv2.line(img, points[i-1, :-1].astype('int'),
-                           points[i, :-1].astype('int'), (255, 255, 0), 2)
+            for i in range(len(points)):
+                img = cv2.line(img, points[i-1, :-1].astype('int'),
+                            points[i, :-1].astype('int'), (255, 255, 255), 2)
+        else:
+            orthographic_projection = False
+            points_wrt_camera_left = np.linalg.inv(Twc) @ T_model_to_camera @ T_model @ points[:, :, None]            
+            points_wrt_camera_right = points_wrt_camera_left + np.array([[-0.05],[0],[0],[0]]) * anaglyph_dist_between_eyes_scale
+            
+            points_left = camera_matrix @ points_wrt_camera_left
+            points_left = points_left.squeeze()
+            points_left = points_left / (points_left[:, -1, None])
+
+            for i in range(len(points_left)):
+                img = cv2.line(img, points_left[i-1, :-1].astype('int'),
+                            points_left[i, :-1].astype('int'), (0, 0, 255), 2)
+            
+            points_right = camera_matrix @ points_wrt_camera_right
+            points_right = points_right.squeeze()
+            points_right = points_right / (points_right[:, -1, None])
+
+            for i in range(len(points_right)):
+                img = cv2.line(img, points_right[i-1, :-1].astype('int'),
+                            points_right[i, :-1].astype('int'), (255, 255, 0), 2)
     # Show some status
     if orthographic_projection:
-        cv2.putText(img, 'Orthographic', (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, thickness=2)
+        cv2.putText(img, 'Orthographic', (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), thickness=2)
     else:
-        cv2.putText(img, 'Perspective', (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, 255, thickness=2)
+        cv2.putText(img, 'Perspective', (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), thickness=2)
     
     cv2.imshow(win, img)
     key = cv2.waitKey(1) & 0xFF
@@ -117,3 +140,5 @@ while True:
         orthographic_projection = not orthographic_projection
     if key == ord('c'):
         cv2.imwrite("./screenshot.png", img)
+    if key == ord('3'):
+        anaglyph = not anaglyph
